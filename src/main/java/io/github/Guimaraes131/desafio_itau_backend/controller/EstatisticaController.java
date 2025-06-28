@@ -3,9 +3,11 @@ package io.github.Guimaraes131.desafio_itau_backend.controller;
 import io.github.Guimaraes131.desafio_itau_backend.model.Estatistica;
 import io.github.Guimaraes131.desafio_itau_backend.model.Transacao;
 import io.github.Guimaraes131.desafio_itau_backend.repository.TransacaoRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/estatistica")
+@Slf4j
 public class EstatisticaController {
 
     private final TransacaoRepository repository;
@@ -26,9 +29,9 @@ public class EstatisticaController {
     }
 
     @GetMapping
-    public ResponseEntity<Estatistica> get() {
+    public ResponseEntity<Estatistica> get(@RequestParam(value = "tempo", required = false, defaultValue = "60") Integer tempo) {
         OffsetDateTime agora = OffsetDateTime.now();
-        OffsetDateTime limite = agora.minusSeconds(60);
+        OffsetDateTime limite = agora.minusSeconds(tempo);
 
         List<Transacao> ultimasTransacoes = repository
                 .findAll()
@@ -60,9 +63,11 @@ public class EstatisticaController {
                     maiorValor.get()
             );
 
+            log.info("Registros encontrados! Retornando estatistica com dados");
             return ResponseEntity.ok(estatistica);
         }
 
+        log.info("Nao foram encontrados registros! Retornando estatistica vazia");
         return ResponseEntity.ok(Estatistica.semRegistro());
     }
 }
