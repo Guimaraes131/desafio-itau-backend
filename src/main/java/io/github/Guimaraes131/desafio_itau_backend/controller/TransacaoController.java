@@ -2,6 +2,7 @@ package io.github.Guimaraes131.desafio_itau_backend.controller;
 
 import io.github.Guimaraes131.desafio_itau_backend.model.Estatistica;
 import io.github.Guimaraes131.desafio_itau_backend.model.Transacao;
+import io.github.Guimaraes131.desafio_itau_backend.repository.TransacaoRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,63 +20,23 @@ import java.util.Optional;
 @RequestMapping("/transacao")
 public class TransacaoController {
 
-    private final ArrayList<Transacao> repositorio;
+    private final TransacaoRepository repository;
 
-    public TransacaoController(ArrayList<Transacao> repositorio) {
-        this.repositorio = repositorio;
+    public TransacaoController(TransacaoRepository repository) {
+        this.repository = repository;
     }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody @Valid Transacao transacao) {
-        repositorio.add(transacao);
+        repository.create(transacao);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping
     public ResponseEntity<?> destroy() {
-        repositorio.removeAll(repositorio);
+        repository.destroyAll();
 
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/estatistica")
-    public ResponseEntity<Estatistica> get() {
-        OffsetDateTime agora = OffsetDateTime.now();
-        OffsetDateTime limite = agora.minusSeconds(60);
-
-        List<Transacao> ultimasTransacoes = repositorio
-                .stream()
-                .filter(t -> t.getDataHora().isAfter(limite))
-                .toList();
-
-        Integer count = ultimasTransacoes.size();
-
-        BigDecimal soma = ultimasTransacoes
-                .stream()
-                .map(Transacao::getValor)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        Optional<BigDecimal> menorValor = ultimasTransacoes.stream()
-                .map(Transacao::getValor)
-                .min(Comparator.naturalOrder());
-
-        Optional<BigDecimal> maiorValor = ultimasTransacoes.stream()
-                .map(Transacao::getValor)
-                .max(Comparator.naturalOrder());
-
-        if (maiorValor.isPresent()) {
-            Estatistica estatistica = new Estatistica(
-                    count,
-                    soma,
-                    soma.divide(BigDecimal.valueOf(count), 3, RoundingMode.HALF_UP),
-                    menorValor.get(),
-                    maiorValor.get()
-            );
-
-            return ResponseEntity.ok(estatistica);
-        }
-
-        return ResponseEntity.ok(Estatistica.semRegistro());
     }
 }
